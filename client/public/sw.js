@@ -21,7 +21,12 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // API calls: network-first
+  // Skip cross-origin requests (API calls to Render, etc.) — let browser handle them directly
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Same-origin API calls: network-first
   if (url.pathname.startsWith('/api')) {
     event.respondWith(
       fetch(request)
@@ -40,8 +45,10 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((res) => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
         return res;
       });
     })
