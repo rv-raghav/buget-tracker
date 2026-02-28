@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CycleStatus {
+  ACTIVE
+  CLOSED
+}
+
+model SalaryCycle {
+  id            String       @id @default(cuid())
+  salaryAmount  Float
+  creditedAt    DateTime     @default(now())
+  closedAt      DateTime?
+  status        CycleStatus  @default(ACTIVE)
+  totalExpenses Float?
+  totalSaved    Float?
+  expenses      Expense[]
+  savings       SavingsDecision?
+  createdAt     DateTime     @default(now())
+}
+
+model Expense {
+  id            String       @id @default(cuid())
+  salaryCycleId String
+  salaryCycle   SalaryCycle  @relation(fields: [salaryCycleId], references: [id], onDelete: Cascade)
+  amount        Float
+  category      String
+  note          String?
+  isDefault     Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+}
+
+model DefaultExpense {
+  id       String  @id @default(cuid())
+  name     String
+  amount   Float
+  isActive Boolean @default(true)
+}
+
+model SavingsDecision {
+  id            String       @id @default(cuid())
+  salaryCycleId String       @unique
+  salaryCycle   SalaryCycle  @relation(fields: [salaryCycleId], references: [id], onDelete: Cascade)
+  savedAmount   Float
+  userChoice    String?
+  aiSuggestions Json
+  createdAt     DateTime     @default(now())
+}
