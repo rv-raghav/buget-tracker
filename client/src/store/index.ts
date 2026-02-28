@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
-import type { SalaryCycle, Expense, DefaultExpense, Analytics, HistoricalCycle, AiRecommendation } from '../types';
+import type { SalaryCycle, DefaultExpense, Analytics, HistoricalCycle, AiRecommendation } from '../types';
 
 // ─── Theme Store ────────────────────────────────────────
 interface ThemeStore {

@@ -65,12 +65,12 @@ export default function Analytics() {
           <h3 style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.75rem' }}>Category Breakdown</h3>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
-              <Pie data={categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+              <Pie data={categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
                 {categoryData.map((entry, i) => (
                   <Cell key={i} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -86,7 +86,7 @@ export default function Analytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="label" fontSize={10} stroke="var(--color-text-secondary)" />
                 <YAxis fontSize={10} stroke="var(--color-text-secondary)" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Bar dataKey="spent" fill="#ef4444" radius={[4, 4, 0, 0]} name="Spent" />
                 <Bar dataKey="saved" fill="#10b981" radius={[4, 4, 0, 0]} name="Saved" />
               </BarChart>
@@ -100,7 +100,7 @@ export default function Analytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="label" fontSize={10} stroke="var(--color-text-secondary)" />
                 <YAxis fontSize={10} stroke="var(--color-text-secondary)" tickFormatter={(v) => `${v}%`} />
-                <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
                 <Line type="monotone" dataKey="rate" stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 4, fill: 'var(--color-primary)' }} name="Savings Rate" />
               </LineChart>
             </ResponsiveContainer>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../store';
-import { formatCurrency, formatDate } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 
 export default function SalaryHistory() {
   const { activeCycle, fetchActiveCycle, getRecommendation, recommendation } = useAppStore();
