@@ -26,6 +26,8 @@ model SalaryCycle {
   expenses      Expense[]
   savings       SavingsDecision?
   createdAt     DateTime     @default(now())
+
+  @@index([status, creditedAt])
 }
 
 model Expense {
@@ -37,6 +39,9 @@ model Expense {
   note          String?
   isDefault     Boolean      @default(false)
   createdAt     DateTime     @default(now())
+
+  @@index([salaryCycleId, createdAt])
+  @@index([salaryCycleId, category])
 }
 
 model DefaultExpense {
@@ -44,6 +49,8 @@ model DefaultExpense {
   name     String
   amount   Float
   isActive Boolean @default(true)
+
+  @@index([isActive])
 }
 
 model SavingsDecision {

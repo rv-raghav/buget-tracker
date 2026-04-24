@@ -1,16 +1,44 @@
 import prisma from '../lib/prisma.js';
 import { CycleStatus } from '../../generated/prisma/client.js';
 
+const cycleWithRelationsSelect = {
+  id: true,
+  salaryAmount: true,
+  creditedAt: true,
+  closedAt: true,
+  status: true,
+  totalExpenses: true,
+  totalSaved: true,
+  createdAt: true,
+  expenses: {
+    orderBy: { createdAt: 'desc' as const },
+    select: {
+      id: true,
+      salaryCycleId: true,
+      amount: true,
+      category: true,
+      note: true,
+      isDefault: true,
+      createdAt: true,
+    },
+  },
+  savings: true,
+};
+
 export async function createSalaryCycle(salaryAmount: number) {
   return prisma.$transaction(async (tx) => {
-    // 1. Close existing ACTIVE cycle if any
     const activeCycle = await tx.salaryCycle.findFirst({
       where: { status: CycleStatus.ACTIVE },
-      include: { expenses: true },
+      select: { id: true, salaryAmount: true },
     });
 
     if (activeCycle) {
-      const totalExpenses = activeCycle.expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totals = await tx.expense.aggregate({
+        where: { salaryCycleId: activeCycle.id },
+        _sum: { amount: true },
+      });
+
+      const totalExpenses = totals._sum.amount ?? 0;
       const totalSaved = activeCycle.salaryAmount - totalExpenses;
 
       await tx.salaryCycle.update({
@@ -24,14 +52,14 @@ export async function createSalaryCycle(salaryAmount: number) {
       });
     }
 
-    // 2. Create new cycle
     const newCycle = await tx.salaryCycle.create({
       data: { salaryAmount },
+      select: { id: true },
     });
 
-    // 3. Auto-add active default expenses
     const defaults = await tx.defaultExpense.findMany({
       where: { isActive: true },
+      select: { name: true, amount: true },
     });
 
     if (defaults.length > 0) {
@@ -46,10 +74,9 @@ export async function createSalaryCycle(salaryAmount: number) {
       });
     }
 
-    // Return the new cycle with expenses
     return tx.salaryCycle.findUnique({
       where: { id: newCycle.id },
-      include: { expenses: true, savings: true },
+      select: cycleWithRelationsSelect,
     });
   });
 }
@@ -57,10 +84,7 @@ export async function createSalaryCycle(salaryAmount: number) {
 export async function getActiveCycle() {
   return prisma.salaryCycle.findFirst({
     where: { status: CycleStatus.ACTIVE },
-    include: {
-      expenses: { orderBy: { createdAt: 'desc' } },
-      savings: true,
-    },
+    select: cycleWithRelationsSelect,
   });
 }
 
@@ -69,10 +93,10 @@ export async function getCycleHistory(page = 1, limit = 10) {
   const [cycles, total] = await Promise.all([
     prisma.salaryCycle.findMany({
       where: { status: CycleStatus.CLOSED },
-      include: { expenses: true, savings: true },
       orderBy: { creditedAt: 'desc' },
       skip,
       take: limit,
+      select: cycleWithRelationsSelect,
     }),
     prisma.salaryCycle.count({ where: { status: CycleStatus.CLOSED } }),
   ]);
@@ -83,6 +107,7 @@ export async function getCycleHistory(page = 1, limit = 10) {
 export async function updateActiveCycleSalary(salaryAmount: number) {
   const activeCycle = await prisma.salaryCycle.findFirst({
     where: { status: CycleStatus.ACTIVE },
+    select: { id: true },
   });
 
   if (!activeCycle) {
@@ -92,23 +117,20 @@ export async function updateActiveCycleSalary(salaryAmount: number) {
   return prisma.salaryCycle.update({
     where: { id: activeCycle.id },
     data: { salaryAmount },
-    include: {
-      expenses: { orderBy: { createdAt: 'desc' } },
-      savings: true,
-    },
+    select: cycleWithRelationsSelect,
   });
 }
 
 export async function deleteActiveCycle() {
   const activeCycle = await prisma.salaryCycle.findFirst({
     where: { status: CycleStatus.ACTIVE },
+    select: { id: true },
   });
 
   if (!activeCycle) {
     throw new Error('No active salary cycle found');
   }
 
-  // Cascade delete handles expenses and savings
   await prisma.salaryCycle.delete({
     where: { id: activeCycle.id },
   });
