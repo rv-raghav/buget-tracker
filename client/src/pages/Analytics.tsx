@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useAppStore } from '../store';
 import { formatCurrency, formatDate, getCategoryColor } from '../utils/format';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line, CartesianGrid } from 'recharts';
+import { BarChart3 } from 'lucide-react';
 
 export default function Analytics() {
   const { analytics, history, fetchAnalytics, fetchHistory } = useAppStore();
@@ -110,7 +111,7 @@ export default function Analytics() {
 
       {!analytics && savingsData.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-secondary)' }}>
-          <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📊</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}><BarChart3 size={30} color="var(--color-text-secondary)" /></div>
           <p>No data yet. Start tracking to see analytics.</p>
         </div>
       )}

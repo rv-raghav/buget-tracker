@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Layers, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useAppStore } from '../store';
 import { formatCurrency } from '../utils/format';
 
@@ -31,12 +32,12 @@ export default function Defaults() {
   };
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ padding: '1rem', maxWidth: '720px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>Default Expenses</h2>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>+ Add</button>
+        <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}><Plus size={16} /> Add</button>
       </div>
-      <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
+      <p style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
         These are automatically added when you start a new salary cycle (SIP, Rent, etc.)
       </p>
 
@@ -47,38 +48,34 @@ export default function Defaults() {
           </div>
         )}
         {defaults.map((d) => (
-          <div key={d.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.25rem' }}>
+          <div key={d.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.9rem 1rem' }}>
             {editId === d.id ? (
               <div style={{ flex: 1, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <input className="input" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} style={{ flex: 1 }} />
-                <input className="input" type="number" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} style={{ width: '100px' }} />
+                <input className="input" type="number" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} style={{ width: '120px' }} />
                 <button className="btn btn-primary btn-sm" onClick={saveEdit}>Save</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => setEditId(null)}>✕</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditId(null)}><X size={14} /></button>
               </div>
             ) : (
               <>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', background: 'rgba(99,102,241,0.1)', flexShrink: 0 }}>
-                  📌
+                <div className="icon-glass" style={{ flexShrink: 0 }}>
+                  <Layers size={16} />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: '600', fontSize: '0.875rem' }}>{d.name}</p>
-                  <p style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--color-primary)' }}>{formatCurrency(d.amount)}</p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: '600', fontSize: '0.9rem' }}>{d.name}</p>
+                  <p style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--color-primary-light)' }}>{formatCurrency(d.amount)}</p>
                 </div>
-                <button
-                  className={`toggle ${d.isActive ? 'active' : ''}`}
-                  onClick={() => updateDefault(d.id, { isActive: !d.isActive })}
-                >
+                <button className={`toggle ${d.isActive ? 'active' : ''}`} onClick={() => updateDefault(d.id, { isActive: !d.isActive })}>
                   <div className="toggle-knob" />
                 </button>
-                <button className="btn btn-ghost btn-sm" onClick={() => startEdit(d)} style={{ fontSize: '0.75rem' }}>✎</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => deleteDefault(d.id)} style={{ fontSize: '0.75rem', color: 'var(--color-danger)' }}>🗑</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => startEdit(d)}><Pencil size={14} /></button>
+                <button className="btn btn-ghost btn-sm" onClick={() => deleteDefault(d.id)} style={{ color: 'var(--color-danger)' }}><Trash2 size={14} /></button>
               </>
             )}
           </div>
         ))}
       </div>
 
-      {/* Add modal */}
       {showAdd && (
         <div className="modal-overlay" onClick={() => setShowAdd(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
