@@ -1,23 +1,30 @@
 import prisma from '../lib/prisma.js';
 import { CycleStatus } from '../../generated/prisma/client.js';
 
+async function getActiveCycleId() {
+  const activeCycle = await prisma.salaryCycle.findFirst({
+    where: { status: CycleStatus.ACTIVE },
+    select: { id: true },
+  });
+
+  return activeCycle?.id ?? null;
+}
+
 export async function addExpense(data: {
   amount: number;
   category: string;
   note?: string;
   isDefault?: boolean;
 }) {
-  const activeCycle = await prisma.salaryCycle.findFirst({
-    where: { status: CycleStatus.ACTIVE },
-  });
+  const activeCycleId = await getActiveCycleId();
 
-  if (!activeCycle) {
+  if (!activeCycleId) {
     throw new Error('No active salary cycle. Please add your salary first.');
   }
 
   return prisma.expense.create({
     data: {
-      salaryCycleId: activeCycle.id,
+      salaryCycleId: activeCycleId,
       amount: data.amount,
       category: data.category,
       note: data.note || null,
@@ -27,16 +34,14 @@ export async function addExpense(data: {
 }
 
 export async function getExpensesForActiveCycle() {
-  const activeCycle = await prisma.salaryCycle.findFirst({
-    where: { status: CycleStatus.ACTIVE },
-  });
+  const activeCycleId = await getActiveCycleId();
 
-  if (!activeCycle) {
+  if (!activeCycleId) {
     return [];
   }
 
   return prisma.expense.findMany({
-    where: { salaryCycleId: activeCycle.id },
+    where: { salaryCycleId: activeCycleId },
     orderBy: { createdAt: 'desc' },
   });
 }

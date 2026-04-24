@@ -4,31 +4,45 @@ import { CycleStatus } from '../../generated/prisma/client.js';
 export async function getCurrentAnalytics() {
   const activeCycle = await prisma.salaryCycle.findFirst({
     where: { status: CycleStatus.ACTIVE },
-    include: { expenses: true },
+    select: { id: true, salaryAmount: true, creditedAt: true },
   });
 
   if (!activeCycle) {
     return null;
   }
 
-  const totalExpenses = activeCycle.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const [totals, categoryRows, dailyRows] = await Promise.all([
+    prisma.expense.aggregate({
+      where: { salaryCycleId: activeCycle.id },
+      _sum: { amount: true },
+      _count: { id: true },
+    }),
+    prisma.expense.groupBy({
+      by: ['category'],
+      where: { salaryCycleId: activeCycle.id },
+      _sum: { amount: true },
+    }),
+    prisma.expense.findMany({
+      where: { salaryCycleId: activeCycle.id },
+      select: { amount: true, createdAt: true },
+    }),
+  ]);
+
+  const totalExpenses = totals._sum.amount ?? 0;
   const remaining = activeCycle.salaryAmount - totalExpenses;
   const spentPercent = activeCycle.salaryAmount > 0
     ? (totalExpenses / activeCycle.salaryAmount) * 100
     : 0;
 
-  // Category breakdown
-  const categoryBreakdown: Record<string, number> = {};
-  activeCycle.expenses.forEach((e) => {
-    categoryBreakdown[e.category] = (categoryBreakdown[e.category] || 0) + e.amount;
-  });
+  const categoryBreakdown = Object.fromEntries(
+    categoryRows.map((row) => [row.category, row._sum.amount ?? 0]),
+  );
 
-  // Daily spending (for trend)
   const dailySpending: Record<string, number> = {};
-  activeCycle.expenses.forEach((e) => {
-    const date = e.createdAt.toISOString().split('T')[0];
-    dailySpending[date] = (dailySpending[date] || 0) + e.amount;
-  });
+  for (const row of dailyRows) {
+    const date = row.createdAt.toISOString().split('T')[0];
+    dailySpending[date] = (dailySpending[date] || 0) + row.amount;
+  }
 
   return {
     cycleId: activeCycle.id,
@@ -38,7 +52,7 @@ export async function getCurrentAnalytics() {
     spentPercent: Math.round(spentPercent * 100) / 100,
     categoryBreakdown,
     dailySpending,
-    expenseCount: activeCycle.expenses.length,
+    expenseCount: totals._count.id,
     creditedAt: activeCycle.creditedAt,
   };
 }
@@ -46,26 +60,50 @@ export async function getCurrentAnalytics() {
 export async function getHistoricalAnalytics() {
   const closedCycles = await prisma.salaryCycle.findMany({
     where: { status: CycleStatus.CLOSED },
-    include: { expenses: true },
     orderBy: { creditedAt: 'asc' },
+    select: {
+      id: true,
+      salaryAmount: true,
+      totalExpenses: true,
+      totalSaved: true,
+      creditedAt: true,
+      closedAt: true,
+    },
   });
 
+  if (closedCycles.length === 0) {
+    return [];
+  }
+
+  const cycleIds = closedCycles.map((cycle) => cycle.id);
+  const groupedExpenses = await prisma.expense.groupBy({
+    by: ['salaryCycleId', 'category'],
+    where: { salaryCycleId: { in: cycleIds } },
+    _sum: { amount: true },
+  });
+
+  const categoryByCycle: Record<string, Record<string, number>> = {};
+  for (const row of groupedExpenses) {
+    if (!categoryByCycle[row.salaryCycleId]) {
+      categoryByCycle[row.salaryCycleId] = {};
+    }
+
+    categoryByCycle[row.salaryCycleId][row.category] = row._sum.amount ?? 0;
+  }
+
   return closedCycles.map((cycle) => {
-    const categoryBreakdown: Record<string, number> = {};
-    cycle.expenses.forEach((e) => {
-      categoryBreakdown[e.category] = (categoryBreakdown[e.category] || 0) + e.amount;
-    });
+    const totalSaved = cycle.totalSaved || 0;
 
     return {
       cycleId: cycle.id,
       salaryAmount: cycle.salaryAmount,
       totalExpenses: cycle.totalExpenses || 0,
-      totalSaved: cycle.totalSaved || 0,
+      totalSaved,
       creditedAt: cycle.creditedAt,
       closedAt: cycle.closedAt,
-      categoryBreakdown,
+      categoryBreakdown: categoryByCycle[cycle.id] || {},
       savingsRate: cycle.salaryAmount > 0
-        ? Math.round(((cycle.totalSaved || 0) / cycle.salaryAmount) * 10000) / 100
+        ? Math.round((totalSaved / cycle.salaryAmount) * 10000) / 100
         : 0,
     };
   });

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../store';
-import { formatCurrency, formatDate, getCategoryColor, getCategoryEmoji } from '../utils/format';
+import { formatCurrency, formatDate, getCategoryColor } from '../utils/format';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Pencil, Plus, Trash2, Wallet2, X } from 'lucide-react';
 
 const CATEGORIES = ['Food', 'Transport', 'Entertainment', 'Shopping', 'Health', 'Bills', 'Education', 'Other'];
 
@@ -83,7 +84,7 @@ export default function Dashboard() {
   if (!loading && !activeCycle) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', gap: '1.5rem', padding: '2rem' }}>
-        <div style={{ fontSize: '4rem' }}>💰</div>
+        <div className="icon-glass" style={{ width: '70px', height: '70px', borderRadius: '20px' }}><Wallet2 size={34} /></div>
         <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>No Active Salary Cycle</h2>
         <p style={{ color: 'var(--color-text-secondary)', textAlign: 'center', maxWidth: '360px' }}>
           Add your salary to start tracking expenses for this cycle.
@@ -167,8 +168,8 @@ export default function Dashboard() {
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleEditSalary()}
                 />
-                <button className="btn btn-primary btn-sm" onClick={handleEditSalary} style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem' }}>✓</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => setEditingSalary(false)} style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem' }}>✕</button>
+                <button className="btn btn-primary btn-sm" onClick={handleEditSalary} style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem' }}><Pencil size={14} /></button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditingSalary(false)} style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem' }}><X size={14} /></button>
               </div>
             ) : (
               <p
@@ -176,7 +177,7 @@ export default function Dashboard() {
                 onClick={() => { setEditSalaryVal(String(activeCycle!.salaryAmount)); setEditingSalary(true); }}
                 title="Click to edit"
               >
-                {formatCurrency(activeCycle!.salaryAmount)} ✎
+                {formatCurrency(activeCycle!.salaryAmount)}
               </p>
             )}
           </div>
@@ -270,7 +271,7 @@ export default function Dashboard() {
                 /* View Mode */
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', background: `${getCategoryColor(exp.category)}15`, flexShrink: 0 }}>
-                    {getCategoryEmoji(exp.category)}
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: getCategoryColor(exp.category) }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => startEditExpense(exp)} title="Click to edit">
                     <p style={{ fontWeight: '600', fontSize: '0.875rem' }}>{exp.note || exp.category}</p>
@@ -286,17 +287,13 @@ export default function Dashboard() {
                     style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}
                     onClick={() => startEditExpense(exp)}
                     title="Edit"
-                  >
-                    ✎
-                  </button>
+                  ><Pencil size={14} /></button>
                   <button
                     className="btn btn-ghost btn-sm"
                     style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--color-danger)' }}
                     onClick={() => deleteExpense(exp.id)}
                     title="Delete"
-                  >
-                    ✕
-                  </button>
+                  ><X size={14} /></button>
                 </div>
               )}
             </div>
@@ -314,16 +311,14 @@ export default function Dashboard() {
             + New Salary Cycle
           </button>
           <button className="btn btn-danger btn-sm" onClick={() => setShowDeleteConfirm(true)}>
-            🗑 Delete Cycle
+            <><Trash2 size={15} /> Delete Cycle</>
           </button>
         </div>
       </div>
 
       {/* FAB */}
       <button className="fab" onClick={() => setShowAddExpense(true)} id="fab-add-expense">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+        <Plus size={22} />
       </button>
 
       {/* Add Expense Modal */}
@@ -339,7 +334,7 @@ export default function Dashboard() {
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '500', color: 'var(--color-text-secondary)', marginBottom: '0.375rem', display: 'block' }}>Category</label>
                 <select className="select" value={expForm.category} onChange={(e) => setExpForm({ ...expForm, category: e.target.value })}>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{getCategoryEmoji(c)} {c}</option>)}
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
