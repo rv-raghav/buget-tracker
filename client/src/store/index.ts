@@ -75,7 +75,7 @@ interface AppStore {
   getRecommendation: (savedAmount: number, breakdown: Record<string, number>, salary: number, cycleId?: string) => Promise<void>;
 }
 
-export const useAppStore = create<AppStore>((set, get) => ({
+export const useAppStore = create<AppStore>((set) => ({
   activeCycle: null,
   loading: false,
   error: null,
@@ -130,8 +130,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   addExpense: async (data) => {
     try {
-      await api.addExpense(data);
-      await get().fetchActiveCycle();
+      const expense = await api.addExpense(data);
+      set((state) => {
+        if (!state.activeCycle) return state;
+        return {
+          activeCycle: {
+            ...state.activeCycle,
+            expenses: [expense, ...state.activeCycle.expenses],
+          },
+        };
+      });
       useToastStore.getState().add('Expense added!', 'success');
     } catch (err: any) {
       useToastStore.getState().add(err.message, 'error');
@@ -140,8 +148,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   updateExpense: async (id, data) => {
     try {
-      await api.updateExpense(id, data);
-      await get().fetchActiveCycle();
+      const updatedExpense = await api.updateExpense(id, data);
+      set((state) => {
+        if (!state.activeCycle) return state;
+        return {
+          activeCycle: {
+            ...state.activeCycle,
+            expenses: state.activeCycle.expenses.map((expense) =>
+              expense.id === id ? updatedExpense : expense,
+            ),
+          },
+        };
+      });
       useToastStore.getState().add('Expense updated!', 'success');
     } catch (err: any) {
       useToastStore.getState().add(err.message, 'error');
@@ -151,7 +169,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
   deleteExpense: async (id) => {
     try {
       await api.deleteExpense(id);
-      await get().fetchActiveCycle();
+      set((state) => {
+        if (!state.activeCycle) return state;
+        return {
+          activeCycle: {
+            ...state.activeCycle,
+            expenses: state.activeCycle.expenses.filter((expense) => expense.id !== id),
+          },
+        };
+      });
       useToastStore.getState().add('Expense deleted!', 'success');
     } catch (err: any) {
       useToastStore.getState().add(err.message, 'error');
@@ -169,8 +195,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   addDefault: async (data) => {
     try {
-      await api.addDefault(data);
-      await get().fetchDefaults();
+      const createdDefault = await api.addDefault(data);
+      set((state) => ({ defaults: [...state.defaults, createdDefault] }));
       useToastStore.getState().add('Default added!', 'success');
     } catch (err: any) {
       useToastStore.getState().add(err.message, 'error');
@@ -179,8 +205,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   updateDefault: async (id, data) => {
     try {
-      await api.updateDefault(id, data);
-      await get().fetchDefaults();
+      const updatedDefault = await api.updateDefault(id, data);
+      set((state) => ({
+        defaults: state.defaults.map((item) => (item.id === id ? updatedDefault : item)),
+      }));
       useToastStore.getState().add('Default updated!', 'success');
     } catch (err: any) {
       useToastStore.getState().add(err.message, 'error');
@@ -190,7 +218,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   deleteDefault: async (id) => {
     try {
       await api.deleteDefault(id);
-      await get().fetchDefaults();
+      set((state) => ({ defaults: state.defaults.filter((item) => item.id !== id) }));
       useToastStore.getState().add('Default deleted!', 'success');
     } catch (err: any) {
       useToastStore.getState().add(err.message, 'error');
